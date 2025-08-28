@@ -26,6 +26,8 @@ const parseOcrData = (text: string) => {
   const mockConfidence = () => (Math.random() * 0.1 + 0.9).toFixed(2);
 
   const cleanText = text.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+  const dobMatch = cleanText.match(/\b(\d{2}[\/-]\d{2}[\/-]\d{4})\b/);
+  const dob = dobMatch ? dobMatch[1] : "";
 
   let idNumber = "";
   const panMatch = cleanText.match(/\b([A-Z]{5}[0-9]{4}[A-Z])\b/);
@@ -61,15 +63,47 @@ const parseOcrData = (text: string) => {
 
     const nameParts = beforeId.split(/\s+/);
     name = nameParts.slice(-1).join(" ");
+  } else if (aadharMatch && idNumber) {
+    if (dob) {
+      let beforeDob = cleanText.split(dob)[0];
+
+      // Remove common noise words
+      const noiseWords = [
+        "GOVERNMENT",
+        "OF",
+        "INDIA",
+        "DOB",
+        "D.O.B:",
+        "YEAR",
+        "BIRTH",
+        "MALE",
+        "FEMALE",
+        "TRANSGENDER",
+        "19p6s 5ITĞT/",
+      ];
+      noiseWords.forEach((word) => {
+        const regex = new RegExp(word, "gi");
+        beforeDob = beforeDob.replace(regex, "");
+      });
+      console.log(beforeDob, "Before DOB");
+
+      beforeDob = beforeDob.replace(/[^A-Za-z\s]/g, " ").trim();
+
+      beforeDob = beforeDob.replace(/\s+/g, " ").trim();
+
+      const parts = beforeDob
+        .split(/\s+/)
+        .filter((word) => /^[A-Za-z]{1,}$/.test(word));
+      console.log(parts, "Name Parts");
+
+      name = parts.slice(-2).join(" ");
+    }
   } else {
     const nameMatch = cleanText.match(
       /(?:^|[^A-Za-z])(Name)\s*[:\-]?\s*([A-Za-z]+)/i
     );
     if (nameMatch) name = nameMatch[2].trim();
   }
-
-  const dobMatch = cleanText.match(/\b(\d{2}[\/-]\d{2}[\/-]\d{4})\b/);
-  const dob = dobMatch ? dobMatch[1] : "";
 
   return {
     name,
