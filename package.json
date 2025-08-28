@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-ml-kit/text-recognition": "^1.5.2",
     "@react-native/new-app-screen": "0.81.0",
     "react": "19.1.0",

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -8,67 +8,68 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
-} from 'react-native';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import vision from '@react-native-ml-kit/text-recognition';
+} from "react-native";
+import { launchCamera, launchImageLibrary } from "react-native-image-picker";
+import vision from "@react-native-ml-kit/text-recognition";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const parseOcrData = (text: string) => {
   if (!text)
     return {
-      name: '',
-      fatherName: '',
-      idNumber: '',
-      dob: '',
-      confidence: { name: '', fatherName: '', idNumber: '', dob: '' },
+      name: "",
+      fatherName: "",
+      idNumber: "",
+      dob: "",
+      confidence: { name: "", fatherName: "", idNumber: "", dob: "" },
     };
 
   const mockConfidence = () => (Math.random() * 0.1 + 0.9).toFixed(2);
 
-  const cleanText = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  const cleanText = text.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
 
-  let idNumber = '';
+  let idNumber = "";
   const panMatch = cleanText.match(/\b([A-Z]{5}[0-9]{4}[A-Z])\b/);
   const aadharMatch = cleanText.match(/\b(\d{4}\s?\d{4}\s?\d{4})\b/);
   const voterMatch = cleanText.match(/([A-Z]{3})\s*(\d{7})/i);
 
   if (panMatch) {
-    console.log(panMatch, 'PAN Match');
+    console.log(panMatch, "PAN Match");
 
     idNumber = panMatch[1];
   } else if (aadharMatch) {
-    console.log(aadharMatch, 'Aadhar Match');
+    console.log(aadharMatch, "Aadhar Match");
 
-    idNumber = aadharMatch[1].replace(/\s/g, '');
+    idNumber = aadharMatch[1].replace(/\s/g, "");
   } else if (voterMatch) {
-    console.log(voterMatch, 'Voter Match');
+    console.log(voterMatch, "Voter Match");
 
     idNumber = (voterMatch[1] + voterMatch[2]).toUpperCase();
-    console.log(voterMatch, 'Voter ID Match');
+    console.log(voterMatch, "Voter ID Match");
   }
 
-  let name = '';
+  let name = "";
   if (panMatch && idNumber) {
     let beforeId = cleanText.split(idNumber)[0];
 
-    const noiseWords = ['PERMANENT', 'ACCOUNT', 'NUMBER', 'CARD', 'ZTI'];
-    noiseWords.forEach(word => {
-      const regex = new RegExp(word, 'gi');
-      beforeId = beforeId.replace(regex, '');
+    const noiseWords = ["PERMANENT", "ACCOUNT", "NUMBER", "CARD", "ZTI"];
+    noiseWords.forEach((word) => {
+      const regex = new RegExp(word, "gi");
+      beforeId = beforeId.replace(regex, "");
     });
 
-    beforeId = beforeId.replace(/[^A-Za-z\s]/g, '').trim();
+    beforeId = beforeId.replace(/[^A-Za-z\s]/g, "").trim();
 
     const nameParts = beforeId.split(/\s+/);
-    name = nameParts.slice(-1).join(' ');
+    name = nameParts.slice(-1).join(" ");
   } else {
     const nameMatch = cleanText.match(
-      /(?:^|[^A-Za-z])(Name)\s*[:\-]?\s*([A-Za-z]+)/i,
+      /(?:^|[^A-Za-z])(Name)\s*[:\-]?\s*([A-Za-z]+)/i
     );
     if (nameMatch) name = nameMatch[2].trim();
   }
 
   const dobMatch = cleanText.match(/\b(\d{2}[\/-]\d{2}[\/-]\d{4})\b/);
-  const dob = dobMatch ? dobMatch[1] : '';
+  const dob = dobMatch ? dobMatch[1] : "";
 
   return {
     name,
@@ -87,9 +88,9 @@ const parseOcrData = (text: string) => {
 const OcrScreen = () => {
   const [imageUri, setImageUri] = useState(null);
   const [extractedData, setExtractedData] = useState({
-    name: '',
-    idNumber: '',
-    dob: '',
+    name: "",
+    idNumber: "",
+    dob: "",
   });
   const [confidence, setConfidence] = useState({
     name: null,
@@ -97,12 +98,12 @@ const OcrScreen = () => {
     dob: null,
   });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [saveStatus, setSaveStatus] = useState('');
+  const [saveStatus, setSaveStatus] = useState("");
 
   const handleCameraLaunch = async () => {
     const options: any = {
-      mediaType: 'photo',
-      cameraType: 'back',
+      mediaType: "photo",
+      cameraType: "back",
       saveToPhotos: true,
       includeExtra: true,
       forceUpOrientation: true,
@@ -111,9 +112,9 @@ const OcrScreen = () => {
     try {
       const result = await launchCamera(options);
       if (result.didCancel) {
-        console.log('User cancelled camera picker');
+        console.log("User cancelled camera picker");
       } else if (result.errorCode) {
-        console.log('Error: ' + result.errorMessage);
+        console.log("Error: " + result.errorMessage);
       } else {
         const assets = result?.assets;
         if (assets && assets.length > 0) {
@@ -123,13 +124,13 @@ const OcrScreen = () => {
         }
       }
     } catch (error) {
-      console.log('Promise rejected:', error);
+      console.log("Promise rejected:", error);
     }
   };
 
   const handleImagePicker = async () => {
     const options: any = {
-      mediaType: 'photo',
+      mediaType: "photo",
       quality: 1,
     };
 
@@ -137,12 +138,12 @@ const OcrScreen = () => {
       const result = await launchImageLibrary(options);
 
       if (result.didCancel) {
-        console.log('User cancelled image picker');
+        console.log("User cancelled image picker");
         return;
       }
 
       if (result.errorCode) {
-        console.log('ImagePicker Error: ', result.errorMessage);
+        console.log("ImagePicker Error: ", result.errorMessage);
         return;
       }
 
@@ -151,34 +152,34 @@ const OcrScreen = () => {
       // For now, using a mock image if no real image is picked
       const finalImage: any =
         imageUri ||
-        'https://placehold.co/600x400/FFF/000?text=Mock%20ID%20Card';
+        "https://placehold.co/600x400/FFF/000?text=Mock%20ID%20Card";
 
       setImageUri(finalImage);
       processImageForOcr(finalImage);
     } catch (err) {
-      console.error('Image Picker Error:', err);
+      console.error("Image Picker Error:", err);
     }
   };
 
   // Main function to process the image using OCR
-  const processImageForOcr = async uri => {
+  const processImageForOcr = async (uri) => {
     if (!uri) return;
 
     setIsProcessing(true);
-    setSaveStatus('');
-    setExtractedData({ name: '', idNumber: '', dob: '' });
+    setSaveStatus("");
+    setExtractedData({ name: "", idNumber: "", dob: "" });
     setConfidence({ name: null, idNumber: null, dob: null });
 
     try {
       const mockResultText =
-        'Name: Jane Doe\nID Number: 1234567890\nDOB: 1990-05-15\n\nThis is a simulated ID card text. The text recognition is a mockup for demonstration purposes.';
+        "Name: Jane Doe\nID Number: 1234567890\nDOB: 1990-05-15\n\nThis is a simulated ID card text. The text recognition is a mockup for demonstration purposes.";
 
       const result = await vision.recognize(uri);
-      const text = result.blocks.map(block => block.text).join('\n');
+      const text = result.blocks.map((block) => block.text).join("\n");
 
-      console.log('OCR Result Text:', text);
+      console.log("OCR Result Text:", text);
       const parsedData = parseOcrData(text);
-      console.log(parsedData, 'Parsed Data');
+      console.log(parsedData, "Parsed Data");
 
       setTimeout(() => {
         setExtractedData(parsedData);
@@ -186,25 +187,32 @@ const OcrScreen = () => {
         setIsProcessing(false);
       }, 2000);
     } catch (error) {
-      console.error('OCR Error:', error);
-      setSaveStatus('OCR failed. Please try again.');
+      console.error("OCR Error:", error);
+      setSaveStatus("OCR failed. Please try again.");
       setIsProcessing(false);
     }
   };
 
   const handleInputChange = (field, value) => {
-    setExtractedData(prev => ({ ...prev, [field]: value }));
+    setExtractedData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    setSaveStatus('Saving...');
+  const handleSave = async () => {
+    try {
+      setSaveStatus("Saving...");
 
-    setTimeout(() => {
-      console.log('Data saved:', extractedData);
-      setSaveStatus('Data successfully saved!');
-    }, 1500);
+      await AsyncStorage.setItem("ocrUserData", JSON.stringify(extractedData));
+
+      setTimeout(() => {
+        setSaveStatus("Data successfully saved locally!");
+        console.log("Data saved locally:", extractedData);
+      }, 1000);
+    } catch (error) {
+      console.error("Save Error:", error);
+      setSaveStatus("Failed to save data");
+    }
   };
-  console.log(confidence, 'Confidence Scores');
+  console.log(saveStatus, "Save Status");
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -257,18 +265,20 @@ const OcrScreen = () => {
                 <>
                   <Text style={styles.sectionTitle}>Extracted Information</Text>
 
-                  {['name', 'idNumber', 'dob'].map(field => (
+                  {["name", "idNumber", "dob"].map((field) => (
                     <View key={field} style={styles.inputGroup}>
                       <Text style={styles.label}>
                         {field
-                          .replace(/([A-Z])/g, ' $1')
+                          .replace(/([A-Z])/g, " $1")
                           .trim()
                           .toUpperCase()}
                       </Text>
                       <TextInput
                         style={styles.input}
                         value={extractedData[field]}
-                        onChangeText={value => handleInputChange(field, value)}
+                        onChangeText={(value) =>
+                          handleInputChange(field, value)
+                        }
                       />
                       {confidence[field] && (
                         <Text style={styles.confidenceText}>
@@ -290,7 +300,7 @@ const OcrScreen = () => {
                     <Text
                       style={[
                         styles.statusText,
-                        saveStatus.includes('successfully')
+                        saveStatus.includes("successfully")
                           ? styles.statusSuccess
                           : styles.statusError,
                       ]}
@@ -315,61 +325,61 @@ const OcrScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   scrollContainer: {
     padding: 20,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginTop: 5,
   },
   imageContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 10,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 20,
   },
   imagePreview: {
-    width: '100%',
-    aspectRatio: 1.6, // Typical ID card aspect ratio
+    width: "100%",
+    aspectRatio: 1.6,
     borderRadius: 8,
     marginBottom: 15,
   },
   imagePlaceholder: {
-    width: '100%',
+    width: "100%",
     aspectRatio: 1.6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#eee',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#eee",
     borderRadius: 8,
     marginBottom: 15,
   },
   placeholderText: {
-    color: '#888',
+    color: "#888",
     fontSize: 16,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
   },
   button: {
-    backgroundColor: '#007bff',
+    backgroundColor: "#007bff",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -377,22 +387,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   dataContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 15,
   },
   inputGroup: {
@@ -400,52 +410,52 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#555',
+    color: "#555",
     marginBottom: 5,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 5,
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
   },
   confidenceText: {
     fontSize: 12,
-    color: '#008000',
+    color: "#008000",
     marginTop: 5,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   saveButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: "#28a745",
     paddingVertical: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
   },
   saveButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   statusText: {
     marginTop: 10,
-    textAlign: 'center',
-    fontWeight: 'bold',
+    textAlign: "center",
+    fontWeight: "bold",
   },
   statusSuccess: {
-    color: '#28a745',
+    color: "#28a745",
   },
   statusError: {
-    color: '#dc3545',
+    color: "#dc3545",
   },
   infoText: {
-    fontStyle: 'italic',
-    color: '#777',
-    textAlign: 'center',
+    fontStyle: "italic",
+    color: "#777",
+    textAlign: "center",
   },
 });
 
